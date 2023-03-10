@@ -38,7 +38,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |LCTRL |   A  |   S  |   D  |   F  |   G  |-------.    ,-------|   H  |   J  |   K  |   L  |   ;  |  '   |
- * |------+------+------+------+------+------|   [   |    |    ]  |------+------+------+------+------+------|
+ * |------+------+------+------+------+------|   ú   |    |    )  |------+------+------+------+------+------|
  * |LShift|   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
@@ -57,22 +57,22 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * ,-----------------------------------------.                    ,-----------------------------------------.
  * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |                    |  F7  |  F8  |  F9  | F10  | F11  | F12  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
+ * |      |      |   @  |   #  |   $  |   %  |                    |   ^  |   &  |   {  |   }  |   [  |   ]  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |   `  |   !  |   @  |   #  |   $  |   %  |-------.    ,-------|   ^  |   &  |   *  |   (  |   )  |   -  |
- * |------+------+------+------+------+------|   [   |    |    ]  |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------|    |-------|      |   _  |   +  |   {  |   }  |   |  |
+ * |   ;  |   1  |   2  |   3  |   4  |   5  |-------.    ,-------|   6  |   7  |   8  |   9  |   0  |   °  |
+ * |------+------+------+------+------+------|   ú   |    |    )  |------+------+------+------+------+------|
+ * |      |      |      |      |      |      |-------|    |-------|      |   {  |   }  |   [  |   ]  |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
  *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
  */
 [_LOWER] = LAYOUT(
-  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                     KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
-  _______, _______,   AT_CZ, HASH_CZ, DOLA_CZ, PERC_CZ,                   CIRC_CZ, AMPR_CZ,  LCBR_CZ, RCBR_CZ, LSBR_CZ, RSBR_CZ,
-  KC_GRV, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC,                    KC_CIRC, KC_AMPR, KC_ASTR,  KC_LPRN, KC_RPRN, KC_TILD,
-  _______, KC_KB_VOLUME_DOWN, KC_KB_VOLUME_UP, KC_MPRV, KC_MPLY, KC_MNXT,/*half*/ _______, _______, KC_PIPE, LCBR_CZ, RCBR_CZ, LSBR_CZ, RSBR_CZ, _______,
-                             KC_RALT, KC_MUTE, _______, _______, _______,  _______, KC_DEL, _______
+  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                       KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
+  _______, _______, AT_CZ, HASH_CZ, DOLA_CZ, PERC_CZ,                       CIRC_CZ, AMPR_CZ, LCBR_CZ, RCBR_CZ, LSBR_CZ, RSBR_CZ,
+  KC_GRV,  KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC,                     KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_TILD,
+  _______, KC_VOLD, KC_VOLU, KC_MPRV, KC_MPLY, KC_MNXT,  _______, _______,  KC_PPLS, KC_PMNS, KC_PSLS, KC_PAST, KC_PEQL, _______,
+                            KC_RALT, KC_MUTE, _______,   _______, _______,  _______, KC_DEL, _______
 ),
 /* RAISE
  * ,-----------------------------------------.                    ,-----------------------------------------.
@@ -90,10 +90,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
 
 [_RAISE] = LAYOUT(
-  _______, _______, _______, _______, _______, _______,                     _______, _______, _______, _______, _______, _______,
-  KC_GRV,  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                        KC_PPLS, KC_PMNS, KC_PSLS, KC_PAST, KC_PEQL, KC_PIPE,
+  _______, _______, _______, _______, _______, _______,                     _______, _______, _______, _______, _______, GRV_CZ,
+  KC_PSCR, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                        KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_GRV,
   _______, _______,   AT_CZ, HASH_CZ, DOLA_CZ, PERC_CZ,                     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_PGUP, KC_PGDN,
-  _______, TILD_CZ, BSLS_CZ, PIPE_CZ, LESS_CZ, GRES_CZ,  _______, LBRC_CZ,  GRV_CZ,  CIRC_CZ, KC_EQL,  HACEK,   _______, _______,
+  _______, TILD_CZ, BSLS_CZ, PIPE_CZ, LESS_CZ, GRES_CZ,  _______, LBRC_CZ,  GRV_CZ,  CIRC_CZ, KC_EQL,  HACEK,   KC_PIPE, _______,
                              KC_RALT, _______, _______,  _______, _______,  _______, KC_DEL, KC_CAPS
 ),
 /* ADJUST
