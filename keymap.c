@@ -300,9 +300,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case HASH_CZ:
         if (record->event.pressed) {
             register_code(KC_RALT);
-            register_code(KC_3);
+            register_code(KC_X);
         } else {
-            unregister_code(KC_3);
+            unregister_code(KC_X);
             unregister_code(KC_RALT);
         }
         break;
