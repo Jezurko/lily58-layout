@@ -9,6 +9,8 @@ AUDIO_ENABLE = no           # Audio output
 RGBLIGHT_ENABLE = no       # Enable WS2812 RGB underlight.
 SWAP_HANDS_ENABLE = no      # Enable one-hand typing
 OLED_ENABLE= yes     # OLED display
+OS_DETECTION_ENABLE = yes   # Detect Linux/macOS host on plug-in
+MAGIC_ENABLE = yes          # Needed for the Ctrl/GUI swap on macOS (keymap_config)
 
 # If you want to change the display of OLED, you need to change here
 SRC +=  ./lib/layer_state_reader.c \

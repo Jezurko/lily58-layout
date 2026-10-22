@@ -1,7 +1,9 @@
 #include QMK_KEYBOARD_H
 
 enum custom_keycodes {
-    LCBR_CZ= SAFE_RANGE,
+    TOG_OS = SAFE_RANGE, // manual Linux <-> macOS switch
+    // Czech symbols, see cz_map below
+    LCBR_CZ,
     RCBR_CZ,
     LSBR_CZ,
     RSBR_CZ,
@@ -18,9 +20,16 @@ enum custom_keycodes {
     HASH_CZ,
     DOLA_CZ,
     PERC_CZ,
-    AMPR_CZ
-
+    AMPR_CZ,
+    SCLN_CZ,
+    DEG_CZ,
+    APOS_CZ,
+    PSCR_CZ,
+    CZ_LAST = PSCR_CZ
 };
+
+#define CZ_FIRST LCBR_CZ
+#define CZ_COUNT (CZ_LAST - CZ_FIRST + 1)
 
 enum layer_number {
   _QWERTY = 0,
@@ -29,11 +38,77 @@ enum layer_number {
   _ADJUST,
 };
 
+// Host OS: auto-detected on plug-in (OS_DETECTION_ENABLE), TOG_OS overrides it
+// until the next replug. Linux is the reference behaviour.
+static bool is_mac    = false;
+static bool os_manual = false;
+
+static void set_os(bool mac) {
+    is_mac = mac;
+    // macOS: physical Ctrl sends Cmd (and GUI sends Ctrl) so Ctrl+C/V/... work
+    // as on Linux. RAM only, not saved to EEPROM.
+    keymap_config.swap_lctl_lgui = mac;
+    keymap_config.swap_rctl_rgui = mac;
+    clear_keyboard();
+}
+
+bool process_detected_host_os_user(os_variant_t os) {
+    if (!os_manual && os != OS_UNSURE) {
+        set_os(os == OS_MACOS || os == OS_IOS);
+    }
+    return true;
+}
+
+// Modifiers + key that type the same symbol on Linux "Czech (QWERTY)" and
+// macOS "Czech - QWERTY". macOS combos are taken from QMK's
+// quantum/keymap_extras/keymap_czech_mac_ansi.h.
+typedef struct {
+    uint8_t mods;
+    uint8_t key;
+} cz_combo_t;
+
+#define M_ALTGR MOD_BIT(KC_RALT)
+#define M_OPT   MOD_BIT(KC_LALT)
+#define M_SFT   MOD_BIT(KC_LSFT)
+#define M_CMD   MOD_BIT(KC_LGUI)
+
+static const cz_combo_t PROGMEM cz_map[CZ_COUNT][2] = {
+    //                         Linux                           macOS
+    [LCBR_CZ - CZ_FIRST] = { { M_ALTGR | M_SFT, KC_LBRC }, { M_OPT, KC_9 } },        // {
+    [RCBR_CZ - CZ_FIRST] = { { M_ALTGR | M_SFT, KC_RBRC }, { M_OPT, KC_0 } },        // }
+    [LSBR_CZ - CZ_FIRST] = { { M_ALTGR, KC_LBRC },         { M_OPT, KC_LBRC } },     // [
+    [RSBR_CZ - CZ_FIRST] = { { M_ALTGR, KC_RBRC },         { M_OPT, KC_RBRC } },     // ]
+    // macOS: \ and | assume the keyboard type is set to ANSI (System Settings >
+    // Keyboard > Change Keyboard Type). With ISO, macOS swaps KC_GRV and KC_NUBS.
+    [PIPE_CZ - CZ_FIRST] = { { M_ALTGR | M_SFT, KC_BSLS }, { M_SFT, KC_GRV } },      // |
+    [BSLS_CZ - CZ_FIRST] = { { M_ALTGR, KC_BSLS },         { 0, KC_GRV } },          // backslash
+    [TILD_CZ - CZ_FIRST] = { { M_ALTGR | M_SFT, KC_GRV },  { M_OPT, KC_5 } },        // ~
+    [LESS_CZ - CZ_FIRST] = { { M_ALTGR, KC_COMM },         { M_OPT, KC_COMM } },     // <
+    [GRES_CZ - CZ_FIRST] = { { M_ALTGR, KC_DOT },          { M_OPT, KC_DOT } },      // >
+    [HACEK   - CZ_FIRST] = { { M_SFT, KC_EQL },            { M_SFT, KC_EQL } },      // dead caron
+    [GRV_CZ  - CZ_FIRST] = { { M_ALTGR, KC_GRV },          { M_SFT, KC_BSLS } },     // `
+    [CIRC_CZ - CZ_FIRST] = { { M_ALTGR, KC_M },            { M_OPT, KC_6 } },        // ^
+    [LBRC_CZ - CZ_FIRST] = { { M_SFT, KC_RBRC },           { M_SFT, KC_RBRC } },     // (
+    [AT_CZ   - CZ_FIRST] = { { M_ALTGR, KC_2 },            { M_OPT, KC_2 } },        // @
+    [HASH_CZ - CZ_FIRST] = { { M_ALTGR, KC_X },            { M_OPT, KC_3 } },        // #
+    [DOLA_CZ - CZ_FIRST] = { { M_ALTGR, KC_4 },            { M_OPT, KC_4 } },        // $
+    [PERC_CZ - CZ_FIRST] = { { M_ALTGR, KC_5 },            { M_SFT, KC_MINS } },     // %
+    [AMPR_CZ - CZ_FIRST] = { { M_ALTGR, KC_7 },            { M_OPT, KC_7 } },        // &
+    // Shift+; gives dead degree on Linux; handled in process_record_user on macOS
+    [SCLN_CZ - CZ_FIRST] = { { 0, KC_GRV },                { M_OPT, KC_SCLN } },     // ;
+    [DEG_CZ  - CZ_FIRST] = { { M_SFT, KC_GRV },            { M_OPT, KC_MINS } },     // dead degree
+    [APOS_CZ - CZ_FIRST] = { { M_SFT, KC_BSLS },           { M_OPT, KC_QUOT } },     // '
+    [PSCR_CZ - CZ_FIRST] = { { 0, KC_PSCR },               { M_CMD | M_SFT, KC_5 } }, // screenshot UI
+};
+
+// Combo sent on press, released on key up (survives an OS switch mid-press)
+static cz_combo_t cz_held[CZ_COUNT];
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
-/* QWERTY
+/* QWERTY (US keycode labels, except the Czech ;/° key in the top right)
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * | ESC  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |  `   |
+ * | ESC  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  | ;/°  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * | Tab  |   Q  |   W  |   E  |   R  |   T  |                    |   Y  |   U  |   I  |   O  |   P  |  -   |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
@@ -41,15 +116,16 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|   ú   |    |    )  |------+------+------+------+------+------|
  * |LShift|   Z  |   X  |   C  |   V  |   B  |-------|    |-------|   N  |   M  |   ,  |   .  |   /  |RShift|
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
+ *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP|RCTRL |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
+ * On macOS, Ctrl and GUI are swapped (see set_os).
  */
 
  [_QWERTY] = LAYOUT(
-  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_GRV,
+  KC_ESC,   KC_1,   KC_2,    KC_3,    KC_4,    KC_5,                     KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    SCLN_CZ,
   KC_TAB,   KC_Q,   KC_W,    KC_E,    KC_R,    KC_T,                     KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_MINS,
-  KC_LCTRL,  KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
+  KC_LCTL,  KC_A,   KC_S,    KC_D,    KC_F,    KC_G,                     KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT,
   KC_LSFT,  KC_Z,   KC_X,    KC_C,    KC_V,    KC_B, KC_LBRC,  KC_RBRC,  KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_SLSH,  KC_RSFT,
                         KC_LALT, KC_LGUI, MO(_LOWER), KC_SPC, KC_ENT, MO(_RAISE), KC_BSPC, KC_RCTL
 ),
@@ -61,57 +137,59 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |   ;  |   1  |   2  |   3  |   4  |   5  |-------.    ,-------|   6  |   7  |   8  |   9  |   0  |   °  |
  * |------+------+------+------+------+------|   ú   |    |    )  |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------|    |-------|      |   {  |   }  |   [  |   ]  |      |
+ * |      | VolD | VolU | Prev | Play | Next |-------|    |-------|  P+  |  P-  |  P/  |  P*  |  P=  |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
+ *                   | RAlt | Mute |LOWER | /Space  /       \Enter \  |RAISE | Del  |RCTRL |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
  */
 [_LOWER] = LAYOUT(
   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,                       KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,
   _______, _______, AT_CZ, HASH_CZ, DOLA_CZ, PERC_CZ,                       CIRC_CZ, AMPR_CZ, LCBR_CZ, RCBR_CZ, LSBR_CZ, RSBR_CZ,
-  KC_GRV,  KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC,                     KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, KC_TILD,
+  SCLN_CZ, KC_EXLM, KC_AT,   KC_HASH, KC_DLR,  KC_PERC,                     KC_CIRC, KC_AMPR, KC_ASTR, KC_LPRN, KC_RPRN, DEG_CZ,
   _______, KC_VOLD, KC_VOLU, KC_MPRV, KC_MPLY, KC_MNXT,  _______, _______,  KC_PPLS, KC_PMNS, KC_PSLS, KC_PAST, KC_PEQL, _______,
                             KC_RALT, KC_MUTE, _______,   _______, _______,  _______, KC_DEL, _______
 ),
 /* RAISE
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
+ * |      |      |      |      |      |      |                    |      |      |      |      |      |   `  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |   `  |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  |      |
+ * |PrtSc |   1  |   2  |   3  |   4  |   5  |                    |   6  |   7  |   8  |   9  |   0  | ;/°  |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |-------.    ,-------| Left | Down |  Up  |Right |      |      |
- * |------+------+------+------+------+------|   [   |    |    ]  |------+------+------+------+------+------|
- * |  F7  |  F8  |  F9  | F10  | F11  | F12  |-------|    |-------|   +  |   -  |   =  |   *  |   /  |      |
+ * |      |      |   @  |   #  |   $  |   %  |-------.    ,-------| Left | Down |  Up  |Right | PgUp | PgDn |
+ * |------+------+------+------+------+------|       |    |   (   |------+------+------+------+------+------|
+ * |      |   ~  |   \  |   |  |   <  |   >  |-------|    |-------|   `  |   ^  |   ´  |   ˇ  |   '  |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   | RAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
+ *                   | RAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE | Del  | Caps |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
+ * PrtSc opens the screenshot UI on macOS (Cmd+Shift+5).
  */
 
 [_RAISE] = LAYOUT(
   _______, _______, _______, _______, _______, _______,                     _______, _______, _______, _______, _______, GRV_CZ,
-  KC_PSCR, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                        KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_GRV,
+  PSCR_CZ, KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                        KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    SCLN_CZ,
   _______, _______,   AT_CZ, HASH_CZ, DOLA_CZ, PERC_CZ,                     KC_LEFT, KC_DOWN, KC_UP,   KC_RGHT, KC_PGUP, KC_PGDN,
-  _______, TILD_CZ, BSLS_CZ, PIPE_CZ, LESS_CZ, GRES_CZ,  _______, LBRC_CZ,  GRV_CZ,  CIRC_CZ, KC_EQL,  HACEK,   KC_PIPE, _______,
+  _______, TILD_CZ, BSLS_CZ, PIPE_CZ, LESS_CZ, GRES_CZ,  _______, LBRC_CZ,  GRV_CZ,  CIRC_CZ, KC_EQL,  HACEK,   APOS_CZ, _______,
                              KC_RALT, _______, _______,  _______, _______,  _______, KC_DEL, KC_CAPS
 ),
 /* ADJUST
  * ,-----------------------------------------.                    ,-----------------------------------------.
- * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
+ * |  OS  |      |      |      |      |      |                    |      |      |      |      |      |      |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
  * |      |      |      |      |      |      |                    |      |      |      |      |      |      |
  * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------.    ,-------|      |      |RGB ON| HUE+ | SAT+ | VAL+ |
- * |------+------+------+------+------+------|       |    |       |------+------+------+------+------+------|
- * |      |      |      |      |      |      |-------|    |-------|      |      | MODE | HUE- | SAT- | VAL- |
+ * |      |      |      |      |      |      |-------.    ,-------|      |      |      |      |      |      |
+ * |------+------+------+------+------+------| Caps  |    |       |------+------+------+------+------+------|
+ * |      |      |      |      |      |      |-------|    |-------|      |      |      |      |      |      |
  * `-----------------------------------------/       /     \      \-----------------------------------------'
- *                   | RAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP| RGUI |
+ *                   | RAlt | Mute |LOWER | /Space  /       \Enter \  |RAISE | Del  | Caps |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
+ * OS: toggle Linux <-> macOS (overrides auto-detection until replug)
  */
   [_ADJUST] = LAYOUT(
-  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
+  TOG_OS,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,                   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
   XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_CAPS, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
@@ -153,6 +231,7 @@ bool oled_task_user(void) {
     //oled_write_ln(read_keylogs(), false);
     //oled_write_ln(read_mode_icon(keymap_config.swap_lalt_lgui), false);
     oled_write_ln(read_host_led_state(), false);
+    oled_write_ln_P(is_mac ? PSTR("OS: macOS") : PSTR("OS: Linux"), false);
     //oled_write_ln(read_timelog(), false);
   } else {
     write_jezko();
@@ -162,180 +241,42 @@ bool oled_task_user(void) {
 #endif // OLED_ENABLE
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-    case LCBR_CZ:
+    if (keycode == TOG_OS) {
         if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_LSFT);
-            register_code(KC_LBRC);
-        } else {
-            unregister_code(KC_LBRC);
-            unregister_code(KC_LSFT);
-            unregister_code(KC_RALT);
+            os_manual = true;
+            set_os(!is_mac);
         }
-        break;
-    case RCBR_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_LSFT);
-            register_code(KC_RBRC);
-        } else {
-            unregister_code(KC_RBRC);
-            unregister_code(KC_LSFT);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case LSBR_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_LBRC);
-        } else {
-            unregister_code(KC_LBRC);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case RSBR_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_RBRC);
-        } else {
-            unregister_code(KC_RBRC);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case PIPE_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_LSFT);
-            register_code(KC_BSLS);
-        } else {
-            unregister_code(KC_BSLS);
-            unregister_code(KC_LSFT);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case BSLS_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_BSLS);
-        } else {
-            unregister_code(KC_BSLS);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case TILD_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_LSFT);
-            register_code(KC_GRV);
-        } else {
-            unregister_code(KC_GRV);
-            unregister_code(KC_LSFT);
-            unregister_code(KC_RALT);
-       }
-        break;
-    case LESS_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_COMM);
-        } else {
-            unregister_code(KC_COMM);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case GRES_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_DOT);
-        } else {
-            unregister_code(KC_DOT);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case HACEK:
-        if (record->event.pressed) {
-            register_code(KC_LSFT);
-            register_code(KC_EQL);
-        } else {
-            unregister_code(KC_EQL);
-            unregister_code(KC_LSFT);
-        }
-        break;
-    case GRV_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_GRV);
-        } else {
-            unregister_code(KC_GRV);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case CIRC_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_M);
-        } else {
-            unregister_code(KC_M);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case LBRC_CZ:
-        if (record->event.pressed) {
-            register_code(KC_LSFT);
-            register_code(KC_RBRC);
-        } else {
-            unregister_code(KC_RBRC);
-            unregister_code(KC_LSFT);
-        }
-        break;
-    case AT_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_2);
-        } else {
-            unregister_code(KC_2);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case HASH_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_X);
-        } else {
-            unregister_code(KC_X);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case DOLA_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_4);
-        } else {
-            unregister_code(KC_4);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case PERC_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_5);
-        } else {
-            unregister_code(KC_5);
-            unregister_code(KC_RALT);
-        }
-        break;
-    case AMPR_CZ:
-        if (record->event.pressed) {
-            register_code(KC_RALT);
-            register_code(KC_7);
-        } else {
-            unregister_code(KC_7);
-            unregister_code(KC_RALT);
-        }
-        break;
-
+        return false;
     }
-  return true;
+
+    if (keycode >= CZ_FIRST && keycode <= CZ_LAST) {
+        cz_combo_t *held = &cz_held[keycode - CZ_FIRST];
+        if (record->event.pressed) {
+            const uint8_t shift = get_mods() & MOD_MASK_SHIFT;
+            if (keycode == SCLN_CZ && is_mac && shift) {
+                // macOS: Shift+; must give the dead degree, which is DEG_CZ
+                // (Option+-) without Shift. Dead key, so a tap is enough.
+                cz_combo_t deg;
+                memcpy_P(&deg, &cz_map[DEG_CZ - CZ_FIRST][1], sizeof(deg));
+                del_mods(shift);
+                register_mods(deg.mods);
+                tap_code(deg.key);
+                unregister_mods(deg.mods);
+                register_mods(shift);
+                *held = (cz_combo_t){0, KC_NO};
+            } else {
+                memcpy_P(held, &cz_map[keycode - CZ_FIRST][is_mac], sizeof(*held));
+                register_mods(held->mods);
+                register_code(held->key);
+            }
+        } else {
+            unregister_code(held->key);
+            unregister_mods(held->mods);
+        }
+        return false;
+    }
+
+    return true;
 }
 
 void write_jezko() {
