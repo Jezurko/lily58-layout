@@ -39,22 +39,14 @@ enum layer_number {
 };
 
 // Host OS: auto-detected on plug-in (OS_DETECTION_ENABLE), TOG_OS overrides it
-// until the next replug. Linux is the reference behaviour.
+// until the next replug. Linux is the reference behaviour. Modifiers are sent
+// unchanged: on macOS, GUI acts as Cmd and Alt as Option.
 static bool is_mac    = false;
 static bool os_manual = false;
 
-static void set_os(bool mac) {
-    is_mac = mac;
-    // macOS: physical Ctrl sends Cmd (and GUI sends Ctrl) so Ctrl+C/V/... work
-    // as on Linux. RAM only, not saved to EEPROM.
-    keymap_config.swap_lctl_lgui = mac;
-    keymap_config.swap_rctl_rgui = mac;
-    clear_keyboard();
-}
-
 bool process_detected_host_os_user(os_variant_t os) {
     if (!os_manual && os != OS_UNSURE) {
-        set_os(os == OS_MACOS || os == OS_IOS);
+        is_mac = (os == OS_MACOS || os == OS_IOS);
     }
     return true;
 }
@@ -119,7 +111,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *                   | LAlt | LGUI |LOWER | /Space  /       \Enter \  |RAISE |BackSP|RCTRL |
  *                   |      |      |      |/       /         \      \ |      |      |      |
  *                   `----------------------------'           '------''--------------------'
- * On macOS, Ctrl and GUI are swapped (see set_os).
  */
 
  [_QWERTY] = LAYOUT(
@@ -244,7 +235,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (keycode == TOG_OS) {
         if (record->event.pressed) {
             os_manual = true;
-            set_os(!is_mac);
+            is_mac = !is_mac;
         }
         return false;
     }
